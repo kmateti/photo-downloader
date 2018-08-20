@@ -1,7 +1,5 @@
 from shutil import copy2
-import os
-import glob
-import sys
+import os, glob, sys, argparse
 from datetime import datetime
 
 
@@ -12,9 +10,10 @@ class MediaFile:
     ext = ''
     mod_date = 0
     VALID_MEDIA_EXT = ['.jpg', '.cr2', '.mov', '.mts',
-                       '.mp4', '.3gp', '.xmp', '.jpeg', '.mpeg', '.mpg', '.png']
-
+                       '.mp4', '.3gp', '.xmp', '.jpeg', \
+                       '.mpeg', '.mpg', '.png']
     ismedia = False
+
 
     def __init__(self, fullfilepath, dstroot):
 
@@ -29,6 +28,7 @@ class MediaFile:
                 self.filename = filenamenoext
                 self.ext = extension  # best to keep case for later path comparison
                 self.create_destination_path_string(dstroot)
+
 
     def create_destination_path_string(self, dstroot):
         try:
@@ -61,11 +61,26 @@ class MediaFile:
 
 if __name__ == '__main__':
 
-    srcroot = sys.argv[1]
-    dstroot = sys.argv[2]
+    parser = argparse.ArgumentParser(description='Copy and rename images and videos based on modification date.')
+    parser.add_argument('source',
+                    help='the root of the source of images and videos')
+    parser.add_argument('destination',
+                    help='the root of the destination of images and videos')
+    parser.add_argument('-v', '--verbose', required=False,
+                    help='display verbose output', default=False)
+    parser.add_argument('-t', '--test', required=False,
+                    help='test and do not actually copy anything', default=False)
 
-    print(f'Copying pictures and videos \n from {srcroot} \n to {dstroot} \n')
+    args = vars(parser.parse_args())
 
+    srcroot = args["source"]
+    dstroot = args["destination"]
+    verbose = args["verbose"]
+    testmode = args["test"]
+
+    print('------------------------------------------------\n')      
+    print(f'Finding pictures and videos \n in {srcroot} \n to copy to {dstroot} \n')
+    print('------------------------------------------------\n')      
     allfiles = glob.glob(srcroot + '/**/*.*', recursive=True)
 
     skippednum = 0
@@ -78,28 +93,48 @@ if __name__ == '__main__':
         if (m.ismedia):
             fullpath = os.path.normpath(m.dst)
             if os.path.exists(fullpath):
-                print(f'Found {m.src} \n in {fullpath}, skipping\n') 
+                if (verbose):
+                    print(f'Skipping {m.src} \n because it exists in {fullpath}\n') 
+
                 skippednum += 1
             else:
-                print(f'Copying {m.src} \n to {fullpath}\n')
+                if (verbose):
+                    print(f'Adding {m.src} \n to the list headed to {fullpath}\n')
+
                 copyingnum += 1
                 mlist.append(m)
 
         else:
+            if (verbose):
+                print(f'Non-media file {m.src} ignored\n') 
+
             nonmedianum += 1
 
+
+    print('------------------------------------------------\n')      
     print('\nPhoto download preview: \n')  
     print('------------------------------------------------\n')      
     print(f'Found {str(len(allfiles))} files\n')
     print(f'  {str(nonmedianum)} non-media files\n')
     print(f'  {str(skippednum)} media files will be skipped\n')
-    print(f'  {str(copyingnum)} media files copied\n')
-    text = input('\nConfirm copy action?[Y/n]:')
+    print(f'  {str(copyingnum)} media files that can be copied\n')
 
-    if (text.lower() != 'n'):
-        for m in mlist:
-            print(f'Copying file to {m.dst}\n')
-            m.copy_to_destination_path()
+    if (copyingnum):
+        text = input('\nConfirm copy action?[Y/n]:')
+
+        if (text.lower() != 'n'):
+            for m in mlist:
+                
+                if (testmode):
+                    print(f'(test) Copying file to {m.dst}\n')
+                else:
+                    print(f'Copying file to {m.dst}\n')
+                    m.copy_to_destination_path()
+
+        else:
+            print('\nCopying canceled, no action was taken.\n')
     else:
-        print('\nCopying canceled, no action was taken.\n')
+        print('\nNo files found to copy!\n')
+        print('File formats supported: ')
+        [print(s) for s in MediaFile.VALID_MEDIA_EXT]
 

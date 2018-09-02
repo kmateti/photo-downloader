@@ -120,7 +120,11 @@ if __name__ == '__main__':
     print(f'  {str(copyingnum)} media files that can be copied\n')
 
     if (copyingnum):
-        text = input('\nConfirm copy action?[Y/n]:')
+        if (testmode):
+            text = input('\n(test) Confirm copy action?[Y/n]:')
+        else:
+            text = input('\nConfirm copy action?[Y/n]:')
+            
 
         if (text.lower() != 'n'):
             for m in mlist:

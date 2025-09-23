@@ -11,7 +11,8 @@ class MediaFile:
     mod_date = 0
     VALID_MEDIA_EXT = ['.jpg', '.cr2', '.mov', '.mts',
                        '.mp4', '.3gp', '.xmp', '.jpeg', \
-                       '.mpeg', '.mpg', '.png', '.lrf']
+                       '.mpeg', '.mpg', '.png', '.lrf',
+                       '.avi']
     ismedia = False
 
 

@@ -68,6 +68,39 @@ class MediaFile:
         copy2(self.src, self.dst)
 
 
+def scan_media_files(srcroot, dstroot, verbose=False, log_callback=None):
+    allfiles = glob.glob(os.path.join(srcroot, '**', '*.*'), recursive=True)
+    media_to_copy = []
+    skippednum = 0
+    nonmedianum = 0
+
+    def log(message):
+        if verbose:
+            print(message)
+        if log_callback is not None:
+            log_callback(message)
+
+    for src in allfiles:
+        media_file = MediaFile(src, dstroot)
+        if media_file.ismedia:
+            if os.path.exists(os.path.normpath(media_file.dst)):
+                log(
+                    f'Skipping {media_file.src} \n'
+                    f'because it exists in {media_file.dst}\n'
+                )
+                skippednum += 1
+            else:
+                log(
+                    f'Adding {media_file.src} \n'
+                    f'to the list headed to {media_file.dst}\n'
+                )
+                media_to_copy.append(media_file)
+        else:
+            log(f'Non-media file {media_file.src} ignored\n')
+            nonmedianum += 1
+
+    return allfiles, media_to_copy, skippednum, nonmedianum
+
 
 if __name__ == '__main__':
 
@@ -91,34 +124,10 @@ if __name__ == '__main__':
     print('------------------------------------------------\n')      
     print(f'Finding pictures and videos \n in {srcroot} \n to copy to {dstroot} \n')
     print('------------------------------------------------\n')      
-    allfiles = glob.glob(srcroot + '/**/*.*', recursive=True)
-
-    skippednum = 0
-    copyingnum = 0
-    nonmedianum = 0
-
-    mlist = list()
-    for src in allfiles:
-        m = MediaFile(src, dstroot)
-        if (m.ismedia):
-            fullpath = os.path.normpath(m.dst)
-            if os.path.exists(fullpath):
-                if (verbose):
-                    print(f'Skipping {m.src} \n because it exists in {fullpath}\n') 
-
-                skippednum += 1
-            else:
-                if (verbose):
-                    print(f'Adding {m.src} \n to the list headed to {fullpath}\n')
-
-                copyingnum += 1
-                mlist.append(m)
-
-        else:
-            if (verbose):
-                print(f'Non-media file {m.src} ignored\n') 
-
-            nonmedianum += 1
+    allfiles, mlist, skippednum, nonmedianum = scan_media_files(
+        srcroot, dstroot, verbose
+    )
+    copyingnum = len(mlist)
 
 
     print('------------------------------------------------\n')      
@@ -151,4 +160,3 @@ if __name__ == '__main__':
         print('\nNo files found to copy!\n')
         print('File formats supported: ')
         [print(s) for s in MediaFile.VALID_MEDIA_EXT]
-

@@ -11,7 +11,8 @@ class MediaFile:
     mod_date = 0
     VALID_MEDIA_EXT = ['.jpg', '.cr2', '.mov', '.mts',
                        '.mp4', '.3gp', '.xmp', '.jpeg', \
-                       '.mpeg', '.mpg', '.png']
+                       '.mpeg', '.mpg', '.png', '.lrf',
+                       '.avi']
     ismedia = False
 
 
@@ -33,20 +34,29 @@ class MediaFile:
     def create_destination_path_string(self, dstroot):
         try:
             mtime = os.path.getmtime(self.src)
+            ctime = os.path.getctime(self.src)
         except OSError:
             mtime = 0
         
+        last_mod_date = None
         if (mtime):
             last_mod_date = datetime.fromtimestamp(mtime)
 
-            y = str(last_mod_date.year)
-            m = '{:02.0f}'.format(last_mod_date.month)
-            d = '{:02.0f}'.format(last_mod_date.day)
-            sep = os.path.sep
+        creation_date = None
+        if (ctime):
+            creation_date = datetime.fromtimestamp(ctime)
+            
+        assert creation_date or last_mod_date, "No date found"
 
-            self.dst = os.path.normpath(f'{dstroot}{sep}' + \
-            f'{y}{sep}{y}-{m}{sep}{y}-{m}-{d}{sep}' + \
-            f'{y}{m}{d}_{self.filename}{self.ext}')
+        active_date = creation_date if creation_date else last_mod_date
+        y = str(active_date.year)
+        m = '{:02.0f}'.format(active_date.month)
+        d = '{:02.0f}'.format(active_date.day)
+        sep = os.path.sep
+
+        self.dst = os.path.normpath(f'{dstroot}{sep}' + \
+        f'{y}{sep}{y}-{m}{sep}{y}-{m}-{d}{sep}' + \
+        f'{y}{m}{d}_{self.filename}{self.ext}')
 
 
     def copy_to_destination_path(self):
